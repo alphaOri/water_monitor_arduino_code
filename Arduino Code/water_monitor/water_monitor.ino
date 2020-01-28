@@ -11,7 +11,7 @@
 //external interrupt can trigger from pins 2 or 3...
 // using EnableInterrupt library for any other pins I need interrupts on
 const byte flow_pulse_pin = 2, close_valve_indicator_pin = 9, open_valve_indicator_pin = 8,
-          close_valve_cmd_pin = 7, open_valve_cmd_pin = 6;
+          close_valve_cmd_pin = 7, open_valve_cmd_pin = 6, pressure_analog_pin= A0;
 const float liters_per_pulse = 0.00347222222; //from flow meter documentation
 volatile int num_of_pulses = 0, pulses_this_period = 0;
 volatile bool period_up = false;
@@ -19,6 +19,9 @@ volatile byte reports_per_second = 1;
 volatile char valve_status_string[8];
 volatile bool valve_status_message_present = false;
 uint32_t last_interrupt_time = 0; //for debouncing
+
+//pressure sensor variables
+int pressure_reading = 0;
 
 // related variables
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
@@ -28,9 +31,12 @@ PubSubClient mqttClient(ethClient);
 
 #define DEBOUNCE_DELAY 100 // in ms
 #define ARDUINO_CLIENT_ID "water_monitor"
+
 #define PUB_FLOW_METER "water_monitor/flow_meter"
 #define PUB_VALVE_STATUS "water_monitor/valve_status"
 #define PUB_CONFIG_STATUS "water_monitor/config_status"
+#define PUB_PRESSURE_METER "water_monitor/pressure"
+
 #define SUB_VALVE_CONTROL "water_monitor/valve_control"
 #define SUB_CONFIG "water_monitor/config"
 #define SUB_STATUS_REQUEST "water_monitor/status_request"
@@ -82,15 +88,23 @@ void loop() {
   }
 
   if (period_up) {
+
+    /*send flow rate*/
     //Flow rate (l/m) = calibration_factor * num_of_pulses / pulses_per_liter / time_period
     //flow_rate = calibration_factor * pulses_this_period * liters_per_pulse * reports_per_second;
-    char tmpBuffer[10];
-    sprintf(tmpBuffer, "%d", pulses_this_period);
-    mqttClient.publish(PUB_FLOW_METER, tmpBuffer);
+    char flowRateBuffer[10];
+    sprintf(flowRateBuffer, "%d", pulses_this_period);
+    mqttClient.publish(PUB_FLOW_METER, flowRateBuffer);
 
     //Serial.print("pulses_this_period = ");
     //Serial.print(pulses_this_period);
     //Serial.print("\n");
+
+    /*send pressure reading*/
+    pressure_reading = analogRead(pressure_analog_pin);
+    char pressureBuffer[10];
+    sprintf(pressureBuffer, "%d", pressure_reading);
+    mqttClient.publish(PUB_PRESSURE_METER, pressureBuffer);
 
     period_up = false; //reset, wait for Timer1 ISR to set again
   }
