@@ -11,7 +11,7 @@
 //external interrupt can trigger from pins 2 or 3...
 // using EnableInterrupt library for any other pins I need interrupts on
 const byte flow_pulse_pin = 2, close_valve_indicator_pin = 9, open_valve_indicator_pin = 8,
-          close_valve_cmd_pin = 7, open_valve_cmd_pin = 6, pressure_analog_pin= A0;
+          close_valve_cmd_pin = 7, open_valve_cmd_pin = 6, pressure_sensor_pwr_pin=5, pressure_analog_pin=A0;
 const float liters_per_pulse = 0.00347222222; //from flow meter documentation
 volatile int num_of_pulses = 0, pulses_this_period = 0;
 volatile bool period_up = false;
@@ -54,6 +54,10 @@ void setup() {
   enableInterrupt(open_valve_indicator_pin, ISR_valve_open_indicator, CHANGE);
   pinMode(close_valve_cmd_pin, OUTPUT);
   pinMode(open_valve_cmd_pin, OUTPUT);
+
+  //Pressure pins setup - providing power to the pressure sensor via digital pin since ran out of board space...
+  pinMode(pressure_sensor_pwr_pin, OUTPUT);
+  digitalWrite(pressure_sensor_pwr_pin, HIGH);
 
   //Serial setup
   //Serial.begin(115200);
