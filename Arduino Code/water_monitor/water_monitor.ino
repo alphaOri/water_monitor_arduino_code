@@ -10,8 +10,10 @@
 //flow sensor related variables
 //external interrupt can trigger from pins 2 or 3...
 // using EnableInterrupt library for any other pins I need interrupts on
+// using pins D7, D10, D11, D12, D13 for RobotDyn W5500 shield.
 const byte flow_pulse_pin = 2, close_valve_indicator_pin = 9, open_valve_indicator_pin = 8,
-          close_valve_cmd_pin = 7, open_valve_cmd_pin = 6, pressure_sensor_pwr_pin=5, pressure_analog_pin=A0;
+          close_valve_cmd_pin = 3, open_valve_cmd_pin = 6, pressure_sensor_pwr_pin=5, 
+          pressure_analog_pin=A0, pressure_sensor_gnd_pin=4;
 const float liters_per_pulse = 0.00347222222; //from flow meter documentation
 volatile int num_of_pulses = 0, pulses_this_period = 0;
 volatile bool period_up = false;
@@ -55,9 +57,11 @@ void setup() {
   pinMode(close_valve_cmd_pin, OUTPUT);
   pinMode(open_valve_cmd_pin, OUTPUT);
 
-  //Pressure pins setup - providing power to the pressure sensor via digital pin since ran out of board space...
+  //Pressure pins setup - providing power and gnd to the pressure sensor via digital pins since ran out of board space...
   pinMode(pressure_sensor_pwr_pin, OUTPUT);
   digitalWrite(pressure_sensor_pwr_pin, HIGH);
+  pinMode(pressure_sensor_gnd_pin, OUTPUT);
+  digitalWrite(pressure_sensor_gnd_pin, LOW);
 
   //Serial setup
   //Serial.begin(115200);
@@ -174,7 +178,16 @@ void eth_connect(){
   while (Ethernet.begin(mac) == 0) {
     //Serial.println("Failed to configure Ethernet using DHCP");
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-      //Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
+      //Serial.println("Ethernet shield was not found.");
+    }
+    else if (Ethernet.hardwareStatus() == EthernetW5100) {
+      //Serial.println("W5100 Ethernet controller detected.");
+    }
+    else if (Ethernet.hardwareStatus() == EthernetW5200) {
+      //Serial.println("W5200 Ethernet controller detected.");
+    }
+    else if (Ethernet.hardwareStatus() == EthernetW5500) {
+      //Serial.println("W5500 Ethernet controller detected.");
     }
     delay(1000);
   }
